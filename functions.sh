@@ -30,14 +30,28 @@ cleanup_apt_locks() {
     sudo ps aux | grep -E 'apt|dpkg' | grep -v grep
     echo "请输入要终止的进程ID（PID），以空格分隔（例如：1234 5678）："
     read pids
-    for pid in $pids; do
-        sudo kill -9 $pid
-    done
+    if [ -n "$pids" ]; then
+        for pid in $pids; do
+            if [ -n "$pid" ] && [[ "$pid" =~ ^[0-9]+$ ]]; then
+                echo "正在终止进程 $pid..."
+                sudo kill -9 "$pid"
+                if [ $? -eq 0 ]; then
+                    echo "进程 $pid 已成功终止"
+                else
+                    echo "终止进程 $pid 失败"
+                fi
+            else
+                echo "无效的PID: $pid"
+            fi
+        done
+    else
+        echo "未输入任何PID，跳过进程终止步骤"
+    fi
 
     echo "移除锁文件..."
-    sudo rm /var/lib/dpkg/lock-frontend
-    sudo rm /var/lib/dpkg/lock
-    sudo rm /var/cache/apt/archives/lock
+    sudo rm -f /var/lib/dpkg/lock-frontend
+    sudo rm -f /var/lib/dpkg/lock
+    sudo rm -f /var/cache/apt/archives/lock
     echo "重新配置 dpkg..."
     sudo dpkg --configure -a
 
