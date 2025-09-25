@@ -149,10 +149,6 @@ list_and_view_maps() {
     cat "/proc/$pid/maps"
 }
 
-# 定义变量
-SSH_TX="ubuntu@170.106.189.30"
-SSH_KK="root@110.42.34.182"
-
 # 本地服务器的 SSH 地址
 SSH_24="ssy@192.168.122.86"
 SSH_22="ssy@192.168.122.78"
@@ -162,14 +158,6 @@ SSH_SUSE="ssy@192.168.122.185"
 SSH_ARCH="ssy@192.168.122.186"
 
 # 连接到远程服务器的函数
-ssh_connect_tx() {
-    ssh -X "$SSH_TX"
-}
-
-ssh_connect_kk() {
-    ssh -X "$SSH_KK"
-}
-
 ssh_connect_24() {
     ssh -X "$SSH_24"
 }
@@ -202,16 +190,8 @@ sync_to_remote() {
     fi
 
     echo "请选择目标服务器:"
-    select target_ssh in "SSH_TX" "SSH_KK" "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
         case $target_ssh in
-        "SSH_TX")
-            target_ssh_value="$SSH_TX"
-            break
-            ;;
-        "SSH_KK")
-            target_ssh_value="$SSH_KK"
-            break
-            ;;
         "SSH_24")
             target_ssh_value="$SSH_24"
             break
@@ -261,16 +241,8 @@ sync_to_host() {
     fi
 
     echo "请选择目标虚拟机:"
-    select target_ssh in "SSH_TX" "SSH_KK" "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in"SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
         case $target_ssh in
-        "SSH_TX")
-            target_ssh_value="$SSH_TX"
-            break
-            ;;
-        "SSH_KK")
-            target_ssh_value="$SSH_KK"
-            break
-            ;;
         "SSH_24")
             target_ssh_value="$SSH_24"
             break
@@ -331,16 +303,8 @@ open_remote_folder_in_dolphin() {
     local remote_dir="${1:-/home/}"
 
     echo "请选择目标服务器:"
-    select target_ssh in "SSH_TX"  "SSH_KK" "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
         case $target_ssh in
-        "SSH_TX")
-            target_ssh_value="$SSH_TX"
-            break
-            ;;
-        "SSH_KK")
-            target_ssh_value="$SSH_KK"
-            break
-            ;;
         "SSH_24")
             target_ssh_value="$SSH_24"
             break
@@ -480,8 +444,6 @@ list_defined_functions() {
 
     # 网络和远程操作类函数
     echo -e "\033[1;33m== 网络和远程操作 ==\033[0m"
-    echo "ssh_connect_tx: 连接到腾讯云服务器"
-    echo "ssh_connect_kk: 连接到指定服务器"
     echo "ssh_connect_24: 连接到ubuntu24虚拟机"
     echo "ssh_connect_22: 连接到ubuntu22虚拟机"
     echo "ssh_connect_20: 连接到ubuntu20虚拟机"
