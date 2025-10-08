@@ -222,7 +222,6 @@ sync_to_remote() {
             ;;
         esac
     done
-
     echo "\033[32m正在将文件传输到 $target_ssh_value\033[0m"
     rsync -avz "$src_file" "$target_ssh_value:~/"
 
@@ -241,7 +240,7 @@ sync_to_host() {
     fi
 
     echo "请选择目标虚拟机:"
-    select target_ssh in"SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
         case $target_ssh in
         "SSH_24")
             target_ssh_value="$SSH_24"
