@@ -176,3 +176,6 @@ alias clipboard="xclip -selection clipboard"
 
 #kill -9
 alias k9="kill -9"
+
+#find.
+alias find.="find . -name"
