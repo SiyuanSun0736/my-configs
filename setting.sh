@@ -68,7 +68,6 @@ esac
 # 不区分大小写的文件名扩展
 shopt -s nocaseglob;
 
-
 # 自动纠正 cd 命令的拼写错误
 shopt -s cdspell;
 
@@ -95,5 +94,3 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-
-eval "$(direnv hook bash)" 
