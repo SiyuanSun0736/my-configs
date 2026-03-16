@@ -43,4 +43,5 @@ source $ZSH/oh-my-zsh.sh
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-
+# opam configuration
+[[ ! -r /home/ssy/.opam/opam-init/init.zsh ]] || source /home/ssy/.opam/opam-init/init.zsh  > /dev/null 2> /dev/null

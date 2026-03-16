@@ -150,12 +150,13 @@ list_and_view_maps() {
 }
 
 # 本地服务器的 SSH 地址
-SSH_24="ssy@192.168.122.86"
+SSH_24="ssy@192.168.122.23"
 SSH_22="ssy@192.168.122.78"
 SSH_20="ssy@192.168.122.247"
 SSH_FE="ssy@192.168.122.18"
 SSH_SUSE="ssy@192.168.122.185"
 SSH_ARCH="ssy@192.168.122.186"
+SSH_CENT="ssy@192.168.122.60"
 
 # 连接到远程服务器的函数
 ssh_connect_24() {
@@ -182,6 +183,10 @@ ssh_connect_fe() {
     ssh -X "$SSH_FE"
 }
 
+ssh_connect_cent() {
+    ssh -X "$SSH_CENT"
+}
+
 sync_to_remote() {
     local src_file="$1"
     if [ -z "$src_file" ]; then
@@ -190,7 +195,7 @@ sync_to_remote() {
     fi
 
     echo "请选择目标服务器:"
-    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT" ; do
         case $target_ssh in
         "SSH_24")
             target_ssh_value="$SSH_24"
@@ -214,6 +219,10 @@ sync_to_remote() {
             ;;
         "SSH_SUSE")
             target_ssh_value="$SSH_SUSE"
+            break
+            ;;
+        "SSH_CENT")
+            target_ssh_value="$SSH_CENT"
             break
             ;;
         *)
@@ -240,7 +249,7 @@ sync_to_host() {
     fi
 
     echo "请选择目标虚拟机:"
-    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT"; do
         case $target_ssh in
         "SSH_24")
             target_ssh_value="$SSH_24"
@@ -268,6 +277,10 @@ sync_to_host() {
             ;;
         "SSH_SUSE")
             target_ssh_value="$SSH_SUSE"
+            break
+            ;;
+        "SSH_CENT")
+            target_ssh_value="$SSH_CENT"
             break
             ;;
         *)
@@ -302,7 +315,7 @@ open_remote_folder_in_dolphin() {
     local remote_dir="${1:-/home/}"
 
     echo "请选择目标服务器:"
-    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE"; do
+    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT"; do
         case $target_ssh in
         "SSH_24")
             target_ssh_value="$SSH_24"
@@ -326,6 +339,10 @@ open_remote_folder_in_dolphin() {
             ;;
         "SSH_SUSE")
             target_ssh_value="$SSH_SUSE"
+            break
+            ;;
+        "SSH_CENT")
+            target_ssh_value="$SSH_CENT"
             break
             ;;
         *)
