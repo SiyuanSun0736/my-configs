@@ -364,6 +364,42 @@ open_remote_folder_in_dolphin() {
     fi
 }
 
+# 通过 Dolphin 打开 AILab（选择 1=AIlab1, 2=AIlab2）
+# 通过 Dolphin 打开 AILab（选择 AILab1 或 AILab2）
+open_ailab_dolphin() {
+    # 如果未传入远程目录，默认使用根目录 "/home"
+    local remote_dir="${1:-/home}"
+
+    echo "请选择 AILab 目标服务器："
+    select target in "ailab1 (sftp://ailab1@222.24.18.203:221)" "AILab2 (sftp://AILab2@222.24.18.203:222)"; do
+        case "$target" in
+        "ailab1 (sftp://ailab1@222.24.18.203:221)")
+            user="ailab1"
+            port=221
+            break
+            ;;
+        "AILab2 (sftp://AILab2@222.24.18.203:222)")
+            user="AILab2"
+            port=222
+            break
+            ;;
+        *)
+            echo "\033[31m无效的选项，请输入对应的数字（1 或 2）。\033[0m"
+            continue
+            ;;
+        esac
+    done
+
+    echo "\033[32m正在通过 Dolphin 打开：sftp://$user@222.24.18.203:$port$remote_dir\033[0m"
+    nohup dolphin "sftp://$user@222.24.18.203:$port$remote_dir" >/dev/null 2>&1 &
+
+    if [ $? -eq 0 ]; then
+        echo "\033[32m已成功打开 $user。\033[0m"
+    else
+        echo "\033[31m打开 $user 失败。\033[0m"
+    fi
+}
+
 cursor() {
     # 设置Wayland兼容模式（自动检测显示服务器）
     if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
@@ -467,6 +503,7 @@ list_defined_functions() {
     echo "sync_to_remote: 上传文件至远程服务器"
     echo "sync_to_host: 从虚拟机传输文件至主机"
     echo "open_remote_folder_in_dolphin: 使用dolphin打开远程文件夹"
+    echo "open_ailab_dolphin: 选择 AILab1 或 AILab2，通过 Dolphin 打开对应的 sftp 地址"
     echo
 
     # Git相关函数
