@@ -371,32 +371,40 @@ open_ailab_dolphin() {
     local remote_dir="${1:-/home}"
 
     echo "请选择 AILab 目标服务器："
-    select target in "ailab1 (sftp://ailab1@222.24.18.203:221)" "AILab2 (sftp://AILab2@222.24.18.203:222)"; do
+    select target in "ailab1 (sftp://ailab1@222.24.18.203:221)" "AILab2 (sftp://AILab2@222.24.18.203:222)" "root (sftp://root@59.80.21.88:30033)"; do
         case "$target" in
         "ailab1 (sftp://ailab1@222.24.18.203:221)")
             user="ailab1"
+            host="222.24.18.203"
             port=221
             break
             ;;
         "AILab2 (sftp://AILab2@222.24.18.203:222)")
             user="AILab2"
+            host="222.24.18.203"
             port=222
             break
             ;;
+        "root (sftp://root@59.80.21.88:30033)")
+            user="root"
+            host="59.80.21.88"
+            port=30033
+            break
+            ;;
         *)
-            echo "\033[31m无效的选项，请输入对应的数字（1 或 2）。\033[0m"
+            echo "\033[31m无效的选项，请输入对应的数字（1-3）。\033[0m"
             continue
             ;;
         esac
     done
 
-    echo "\033[32m正在通过 Dolphin 打开：sftp://$user@222.24.18.203:$port$remote_dir\033[0m"
-    nohup dolphin "sftp://$user@222.24.18.203:$port$remote_dir" >/dev/null 2>&1 &
+    echo "\033[32m正在通过 Dolphin 打开：sftp://$user@$host:$port$remote_dir\033[0m"
+    nohup dolphin "sftp://$user@$host:$port$remote_dir" >/dev/null 2>&1 &
 
     if [ $? -eq 0 ]; then
-        echo "\033[32m已成功打开 $user。\033[0m"
+        echo "\033[32m已成功打开 $user@$host。\033[0m"
     else
-        echo "\033[31m打开 $user 失败。\033[0m"
+        echo "\033[31m打开 $user@$host 失败。\033[0m"
     fi
 }
 
