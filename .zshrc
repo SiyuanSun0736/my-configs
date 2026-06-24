@@ -39,10 +39,23 @@ source $ZSH/oh-my-zsh.sh
 
 # 加载环境变量
 [[ -f "$HOME/.exports" ]] && source "$HOME/.exports"
+
 # 设置语言环境
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-# opam configuration
-[[ ! -r /home/ssy/.opam/opam-init/init.zsh ]] || source /home/ssy/.opam/opam-init/init.zsh  > /dev/null 2> /dev/null
 
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# fnm
+FNM_PATH="/home/ssy/.local/share/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="$FNM_PATH:$PATH"
+  eval "$(fnm env --shell zsh)"
+fi
+
+# opencode
+export PATH=/home/ssy/.opencode/bin:$PATH
