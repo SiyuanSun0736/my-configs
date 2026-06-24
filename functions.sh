@@ -150,42 +150,14 @@ list_and_view_maps() {
 }
 
 # 本地服务器的 SSH 地址
-SSH_24="ssy@192.168.122.23"
-SSH_22="ssy@192.168.122.78"
-SSH_20="ssy@192.168.122.247"
-SSH_FE="ssy@192.168.122.18"
-SSH_SUSE="ssy@192.168.122.185"
-SSH_ARCH="ssy@192.168.122.186"
-SSH_CENT="ssy@192.168.122.60"
+SSH_24="ssy@192.168.122.198"
+
 
 # 连接到远程服务器的函数
 ssh_connect_24() {
     ssh -X "$SSH_24"
 }
 
-ssh_connect_22() {
-    ssh -X "$SSH_22"
-}
-
-ssh_connect_20() {
-    ssh -X "$SSH_20"
-}
-
-ssh_connect_arch() {
-    ssh -X "$SSH_ARCH"
-}
-
-ssh_connect_suse() {
-    ssh -X "$SSH_SUSE"
-}
-
-ssh_connect_fe() {
-    ssh -X "$SSH_FE"
-}
-
-ssh_connect_cent() {
-    ssh -X "$SSH_CENT"
-}
 
 sync_to_remote() {
     local src_file="$1"
@@ -194,45 +166,8 @@ sync_to_remote() {
         return 1
     fi
 
-    echo "请选择目标服务器:"
-    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT" ; do
-        case $target_ssh in
-        "SSH_24")
-            target_ssh_value="$SSH_24"
-            break
-            ;;
-        "SSH_22")
-            target_ssh_value="$SSH_22"
-            break
-            ;;
-        "SSH_20")
-            target_ssh_value="$SSH_20"
-            break
-            ;;
-        "SSH_ARCH")
-            target_ssh_value="$SSH_ARCH"
-            break
-            ;;
-        "SSH_FE")
-            target_ssh_value="$SSH_FE"
-            break
-            ;;
-        "SSH_SUSE")
-            target_ssh_value="$SSH_SUSE"
-            break
-            ;;
-        "SSH_CENT")
-            target_ssh_value="$SSH_CENT"
-            break
-            ;;
-        *)
-            echo "\033[31m无效的选项，请选择对应的数字（1-8）。\033[0m"
-            continue
-            ;;
-        esac
-    done
-    echo "\033[32m正在将文件传输到 $target_ssh_value\033[0m"
-    rsync -avz "$src_file" "$target_ssh_value:~/"
+    echo "\033[32m正在将文件传输到 $SSH_24\033[0m"
+    rsync -avz "$src_file" "$SSH_24:~/"
 
     if [ $? -eq 0 ]; then
         echo "\033[32m文件传输成功。\033[0m"
@@ -248,60 +183,12 @@ sync_to_host() {
         return 1
     fi
 
-    echo "请选择目标虚拟机:"
-    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT"; do
-        case $target_ssh in
-        "SSH_24")
-            target_ssh_value="$SSH_24"
-            break
-            ;;
-        "SSH_22")
-            target_ssh_value="$SSH_22"
-            break
-            ;;
-        "SSH_20")
-            target_ssh_value="$SSH_20"
-            break
-            ;;
-        "SSH_18")
-            target_ssh_value="$SSH_18"
-            break
-            ;;
-        "SSH_ARCH")
-            target_ssh_value="$SSH_ARCH"
-            break
-            ;;
-        "SSH_FE")
-            target_ssh_value="$SSH_FE"
-            break
-            ;;
-        "SSH_SUSE")
-            target_ssh_value="$SSH_SUSE"
-            break
-            ;;
-        "SSH_CENT")
-            target_ssh_value="$SSH_CENT"
-            break
-            ;;
-        *)
-            echo "\033[31m无效的选项，请选择对应的数字（1-8）。\033[0m"
-            continue
-            ;;
-        esac
-    done
-
-    if [ -z "$target_ssh_value" ]; then
-        echo "\033[31m未选择目标虚拟机，传输取消。\033[0m"
-        return 1
-    fi
-
-    local host_user=$(whoami) # 获取主机用户名，假设主机用户名与当前终端的用户名一致
     local host_target_dir="." # 设置主机端默认的保存目录
 
     echo "\033[32m正在将文件从虚拟机传输到主机：$host_target_dir\033[0m"
 
     # 使用 scp 将文件从虚拟机传输到主机
-    scp "$target_ssh_value:$src_file" "$host_target_dir/"
+    scp "$SSH_24:$src_file" "$host_target_dir/"
 
     if [ $? -eq 0 ]; then
         echo "\033[32m文件传输成功，已保存至：$host_target_dir\033[0m"
@@ -314,48 +201,10 @@ open_remote_folder_in_dolphin() {
     # 如果未传入远程目录，默认使用home目录 "/home/"
     local remote_dir="${1:-/home/}"
 
-    echo "请选择目标服务器:"
-    select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT"; do
-        case $target_ssh in
-        "SSH_24")
-            target_ssh_value="$SSH_24"
-            break
-            ;;
-        "SSH_22")
-            target_ssh_value="$SSH_22"
-            break
-            ;;
-        "SSH_20")
-            target_ssh_value="$SSH_20"
-            break
-            ;;
-        "SSH_ARCH")
-            target_ssh_value="$SSH_ARCH"
-            break
-            ;;
-        "SSH_FE")
-            target_ssh_value="$SSH_FE"
-            break
-            ;;
-        "SSH_SUSE")
-            target_ssh_value="$SSH_SUSE"
-            break
-            ;;
-        "SSH_CENT")
-            target_ssh_value="$SSH_CENT"
-            break
-            ;;
-        *)
-            echo "\033[31m无效的选项，请选择对应的数字（1-8）。\033[0m"
-            continue
-            ;;
-        esac
-    done
-
-    echo "\033[32m正在通过 Dolphin 打开远程文件夹：$target_ssh_value:$remote_dir\033[0m"
+    echo "\033[32m正在通过 Dolphin 打开远程文件夹：$SSH_24:$remote_dir\033[0m"
 
     # 使用 Dolphin 打开远程文件夹
-    nohup dolphin "sftp://$target_ssh_value$remote_dir" >/dev/null 2>&1 &
+    nohup dolphin "sftp://$SSH_24$remote_dir" >/dev/null 2>&1 &
 
     if [ $? -eq 0 ]; then
         echo "\033[32m已成功打开远程文件夹。\033[0m"
@@ -505,9 +354,6 @@ list_defined_functions() {
     # 网络和远程操作类函数
     echo -e "\033[1;33m== 网络和远程操作 ==\033[0m"
     echo "ssh_connect_24: 连接到ubuntu24虚拟机"
-    echo "ssh_connect_22: 连接到ubuntu22虚拟机"
-    echo "ssh_connect_20: 连接到ubuntu20虚拟机"
-    echo "ssh_connect_arch: 连接到Arch Linux虚拟机"
     echo "sync_to_remote: 上传文件至远程服务器"
     echo "sync_to_host: 从虚拟机传输文件至主机"
     echo "open_remote_folder_in_dolphin: 使用dolphin打开远程文件夹"
@@ -526,4 +372,3 @@ list_defined_functions() {
     echo "hisgrep: 在命令历史记录中搜索指定关键字"
     echo
 }
-
