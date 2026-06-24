@@ -166,6 +166,19 @@ sync_to_remote() {
         return 1
     fi
 
+    # echo "请选择目标服务器:"
+    # select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT" ; do
+    #     case $target_ssh in
+    #     "SSH_24") target_ssh_value="$SSH_24"; break ;;
+    #     "SSH_22") target_ssh_value="$SSH_22"; break ;;
+    #     "SSH_20") target_ssh_value="$SSH_20"; break ;;
+    #     "SSH_ARCH") target_ssh_value="$SSH_ARCH"; break ;;
+    #     "SSH_FE") target_ssh_value="$SSH_FE"; break ;;
+    #     "SSH_SUSE") target_ssh_value="$SSH_SUSE"; break ;;
+    #     "SSH_CENT") target_ssh_value="$SSH_CENT"; break ;;
+    #     *) echo "无效的选项"; continue ;;
+    #     esac
+    # done
     echo "\033[32m正在将文件传输到 $SSH_24\033[0m"
     rsync -avz "$src_file" "$SSH_24:~/"
 
@@ -182,6 +195,26 @@ sync_to_host() {
         echo "\033[31m请提供要传输的虚拟机文件路径。\033[0m"
         return 1
     fi
+
+    # echo "请选择目标虚拟机:"
+    # select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT"; do
+    #     case $target_ssh in
+    #     "SSH_24") target_ssh_value="$SSH_24"; break ;;
+    #     "SSH_22") target_ssh_value="$SSH_22"; break ;;
+    #     "SSH_20") target_ssh_value="$SSH_20"; break ;;
+    #     "SSH_18") target_ssh_value="$SSH_18"; break ;;
+    #     "SSH_ARCH") target_ssh_value="$SSH_ARCH"; break ;;
+    #     "SSH_FE") target_ssh_value="$SSH_FE"; break ;;
+    #     "SSH_SUSE") target_ssh_value="$SSH_SUSE"; break ;;
+    #     "SSH_CENT") target_ssh_value="$SSH_CENT"; break ;;
+    #     *) echo "无效的选项"; continue ;;
+    #     esac
+    # done
+
+    # if [ -z "$target_ssh_value" ]; then
+    #     echo "未选择目标虚拟机，传输取消。"
+    #     return 1
+    # fi
 
     local host_target_dir="." # 设置主机端默认的保存目录
 
@@ -200,6 +233,20 @@ sync_to_host() {
 open_remote_folder_in_dolphin() {
     # 如果未传入远程目录，默认使用home目录 "/home/"
     local remote_dir="${1:-/home/}"
+
+    # echo "请选择目标服务器:"
+    # select target_ssh in "SSH_24" "SSH_22" "SSH_20" "SSH_ARCH" "SSH_FE" "SSH_SUSE" "SSH_CENT"; do
+    #     case $target_ssh in
+    #     "SSH_24") target_ssh_value="$SSH_24"; break ;;
+    #     "SSH_22") target_ssh_value="$SSH_22"; break ;;
+    #     "SSH_20") target_ssh_value="$SSH_20"; break ;;
+    #     "SSH_ARCH") target_ssh_value="$SSH_ARCH"; break ;;
+    #     "SSH_FE") target_ssh_value="$SSH_FE"; break ;;
+    #     "SSH_SUSE") target_ssh_value="$SSH_SUSE"; break ;;
+    #     "SSH_CENT") target_ssh_value="$SSH_CENT"; break ;;
+    #     *) echo "无效的选项"; continue ;;
+    #     esac
+    # done
 
     echo "\033[32m正在通过 Dolphin 打开远程文件夹：$SSH_24:$remote_dir\033[0m"
 
