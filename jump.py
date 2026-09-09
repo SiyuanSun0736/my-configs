@@ -36,11 +36,14 @@ import shutil
 import argparse
 import select
 
-# 尝试加载 termios/tty/pty (Unix/Mac/Linux 原生支持)
+# 尝试加载 termios/tty/pty/fcntl/struct/signal (Unix/Mac/Linux 原生支持)
 try:
     import pty
     import tty
     import termios
+    import fcntl
+    import struct
+    import signal
     HAS_PTY = True
 except ImportError:
     HAS_PTY = False
@@ -335,29 +338,56 @@ def clean_terminal_escape_codes(raw: str) -> str:
     return "".join(res)
 
 
-def run_ssh_interactive_with_pty(ssh_cmd: list, password: str) -> int:
-    """使用内置 pty 模块模拟交互式终端 (无需 sshpass 依赖)"""
+def _sync_pty_winsize(master_fd: int) -> None:
+    """同步本地真实终端大小到 PTY 虚拟终端"""
+    if not sys.stdin.isatty():
+        return
+    try:
+        s = struct.pack("HHHH", 0, 0, 0, 0)
+        size = fcntl.ioctl(sys.stdin.fileno(), termios.TIOCGWINSZ, s)
+        fcntl.ioctl(master_fd, termios.TIOCSWINSZ, size)
+    except Exception:
+        pass
+
+
+def run_ssh_interactive_with_pty(ssh_cmd: list, password: str = "", auto_inject_cmd: str = None, env: dict = None) -> int:
+    """使用内置 pty 模块模拟交互式终端，支持密码自动填充与穿透指令动态注入"""
     if not HAS_PTY:
         print("[-] 当前环境不支持标准 pty 终端仿真", file=sys.stderr)
         return 1
 
+    sub_env = os.environ.copy()
+    if env:
+        sub_env.update(env)
+
     pid, master_fd = pty.fork()
     if pid == 0:
-        os.execvp(ssh_cmd[0], ssh_cmd)
+        os.execvpe(ssh_cmd[0], ssh_cmd, sub_env)
 
-    sent_pwd = False
-    buffer = b""
+    _sync_pty_winsize(master_fd)
 
-    old_attr = None
+    old_sigwinch = None
     try:
-        old_attr = termios.tcgetattr(sys.stdin.fileno())
-        tty.setraw(sys.stdin.fileno())
+        old_sigwinch = signal.signal(signal.SIGWINCH, lambda sig, frame: _sync_pty_winsize(master_fd))
     except Exception:
         pass
 
+    old_attr = None
+    if sys.stdin.isatty():
+        try:
+            old_attr = termios.tcgetattr(sys.stdin.fileno())
+            tty.setraw(sys.stdin.fileno())
+        except Exception:
+            pass
+
+    sent_pwd = False if password else True
+    injected_cmd = False if auto_inject_cmd else True
+    buffer = b""
+    first_data_time = None
+
     try:
         while True:
-            rfds, _, _ = select.select([master_fd, sys.stdin.fileno()], [], [])
+            rfds, _, _ = select.select([master_fd, sys.stdin.fileno()], [], [], 0.2)
             if master_fd in rfds:
                 try:
                     data = os.read(master_fd, 1024)
@@ -366,6 +396,10 @@ def run_ssh_interactive_with_pty(ssh_cmd: list, password: str) -> int:
                 if not data:
                     break
 
+                if first_data_time is None:
+                    first_data_time = time.time()
+
+                # 处理非 sshpass 模式下的密码自动填充
                 if not sent_pwd:
                     buffer += data
                     buf_lower = buffer.lower()
@@ -376,8 +410,34 @@ def run_ssh_interactive_with_pty(ssh_cmd: list, password: str) -> int:
                         buffer = b""
                         continue
 
+                # 自动注入 downstream 命令 (如 exec qssh vmyzh286)
+                if not injected_cmd:
+                    buffer += data
+                    # 识别常见跳板机 Shell 就绪特征: $, #, >, :~, @...
+                    shell_ready = (
+                        b"$ " in buffer
+                        or b"# " in buffer
+                        or b"> " in buffer
+                        or b"~$ " in buffer
+                        or b":~" in buffer
+                        or (b"$" in buffer and b"jumpbox" in buffer)
+                        or (first_data_time and time.time() - first_data_time > 3.0)
+                    )
+                    if shell_ready:
+                        time.sleep(0.05)
+                        os.write(master_fd, (auto_inject_cmd.strip() + "\r\n").encode("utf-8"))
+                        injected_cmd = True
+                        buffer = b""
+
                 os.write(sys.stdout.fileno(), data)
                 sys.stdout.flush()
+
+            elif not injected_cmd and first_data_time and time.time() - first_data_time > 3.0:
+                # 超时兜底防卡死注入
+                time.sleep(0.05)
+                os.write(master_fd, (auto_inject_cmd.strip() + "\r\n").encode("utf-8"))
+                injected_cmd = True
+                buffer = b""
 
             if sys.stdin.fileno() in rfds:
                 try:
@@ -388,18 +448,27 @@ def run_ssh_interactive_with_pty(ssh_cmd: list, password: str) -> int:
                     break
                 os.write(master_fd, user_in)
     finally:
+        if old_sigwinch is not None:
+            try:
+                signal.signal(signal.SIGWINCH, old_sigwinch)
+            except Exception:
+                pass
         if old_attr:
             try:
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old_attr)
             except Exception:
                 pass
-        os.close(master_fd)
+        try:
+            os.close(master_fd)
+        except OSError:
+            pass
+
     _, exit_code = os.waitpid(pid, 0)
     return exit_code >> 8
 
 
 def run_ssh_interactive(conn: dict, remote_cmd: str = None, extra_ssh_args: list = None) -> int:
-    """启动交互式终端 (自动检测并优先使用 sshpass)"""
+    """启动交互式终端 (直连跳板机优先使用原生 sshpass，下游穿透则通过 PTY 智能注入)"""
     ssh_args = [
         "ssh",
         "-t",
@@ -416,17 +485,26 @@ def run_ssh_interactive(conn: dict, remote_cmd: str = None, extra_ssh_args: list
     target_spec = f"{conn['username']}@{conn['host']}"
     ssh_args.append(target_spec)
 
-    if remote_cmd:
-        ssh_args.append(remote_cmd)
-
     sshpass_bin = shutil.which("sshpass")
+
+    # 场景 1: 直连跳板机 (无下游穿透命令)
+    if not remote_cmd:
+        if sshpass_bin:
+            os.environ["SSHPASS"] = conn["password"]
+            full_cmd = [sshpass_bin, "-e"] + ssh_args
+            os.execvp(sshpass_bin, full_cmd)
+        else:
+            return run_ssh_interactive_with_pty(ssh_args, password=conn["password"])
+
+    # 场景 2: 目标机下游穿透 (如 qssh vmyzh286)
+    # 注意: JumpServer Koko 堡垒机对于带 PTY 的交互会话会丢弃 SSH 命令行传入的命令直接开启跳板机 bash，
+    # 因此必须通过 PTY 终端代理在跳板机 Shell 就绪后动态注入穿透命令。
     if sshpass_bin:
-        # 使用原生 sshpass 替换当前进程，享受 100% 原生 TTY 表现 (窗口大小调整、Ctrl+C、快捷键完全一致)
-        os.environ["SSHPASS"] = conn["password"]
         full_cmd = [sshpass_bin, "-e"] + ssh_args
-        os.execvp(sshpass_bin, full_cmd)
+        env = {"SSHPASS": conn["password"]}
+        return run_ssh_interactive_with_pty(full_cmd, auto_inject_cmd=remote_cmd, env=env)
     else:
-        return run_ssh_interactive_with_pty(ssh_args, conn["password"])
+        return run_ssh_interactive_with_pty(ssh_args, password=conn["password"], auto_inject_cmd=remote_cmd)
 
 
 def run_ssh_command(conn: dict, remote_cmd: str) -> tuple:
@@ -692,7 +770,7 @@ def main():
     # 模式 C: 交互式直连 Shell
     if args.target_node:
         print(f"[*] 正在穿透直通下游目标机: [{args.target_node}] (链路: JumpServer -> {args.jumpbox} -> qssh {args.target_node}) ...\n")
-        remote_tunnel_cmd = f"qssh {args.target_node}"
+        remote_tunnel_cmd = f"exec qssh {args.target_node}"
         exit_code = run_ssh_interactive(conn, remote_cmd=remote_tunnel_cmd, extra_ssh_args=extra_ssh_args)
     else:
         print(f"[*] 正在直通跳板机: [{args.jumpbox}] 交互终端 ...\n")
